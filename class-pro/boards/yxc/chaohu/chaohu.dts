@@ -1,0 +1,355 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f407Xe.dtsi>
+#include <st/f4/stm32f407v(e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+    model = "chaohu board";
+    compatible = "st,chaohu";
+
+    chosen {
+        zephyr,sram = &sram0;
+        zephyr,flash = &flash0;
+        zephyr,ccm = &ccm0;
+        zephyr,console = &usart1;
+        zephyr,log-uart = &usart1;
+        zephyr,shell-uart = &usart1;
+        zephyr,display = &st7789v;
+        zephyr,touch = &ft6336;
+    };
+
+    leds {
+        compatible = "gpio-leds";
+        blue_led_1: led_1 {
+            gpios = <&gpioe 9 GPIO_ACTIVE_LOW>;
+            label = "led1";
+        };
+        blue_led_2: led_2 {
+            gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+            label = "led2";
+        };
+        blue_led_3: led_3 {
+            gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+            label = "led3";
+        };
+        lcd_led: lcd_led {
+            gpios = <&gpioe 5 GPIO_ACTIVE_HIGH>;
+            label = "lcd_led";
+        };
+    };
+
+    gpio_keys {
+        compatible = "gpio-keys";
+        user_button_1: button_1 {
+            label = "button1";
+            gpios = <&gpioa 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+            zephyr,code = <INPUT_KEY_UP>;
+        };
+        user_button_2: button_2 {
+            label = "button2";
+            gpios = <&gpioc 4 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+            zephyr,code = <INPUT_KEY_DOWN>;
+        };
+        user_button_3: button_3 {
+            label = "button3";
+            gpios = <&gpioc 5 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+            zephyr,code = <INPUT_KEY_ENTER>;
+        };
+    };
+
+    pwmleds {
+        compatible = "pwm-leds";
+
+        blue_pwm_led_1: pwm_led_1 {
+            pwms = <&pwm1 1 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+        };
+
+        blue_pwm_led_2: pwm_led_2 {
+            pwms = <&pwm3 3 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+        };
+
+        blue_pwm_led_3: pwm_led_3 {
+            pwms = <&pwm3 4 PWM_MSEC(1) PWM_POLARITY_NORMAL>;
+        };
+    };
+
+    mipi_dbi {
+        compatible = "zephyr,mipi-dbi-spi";
+        spi-dev = <&spi2>;
+        dc-gpios = <&gpioe 4 GPIO_ACTIVE_HIGH>;
+        reset-gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+        write-only;
+        #address-cells = <1>;
+        #size-cells = <0>;
+
+        st7789v: st7789v@0 {
+                status = "okay";
+                compatible = "sitronix,st7789v";
+                mipi-max-frequency = <DT_FREQ_M(60)>;
+                reg = <0>;
+                width = <240>;
+                height = <320>;
+                x-offset = <0>;
+                y-offset = <0>;
+                vcom = <0x1b>;
+                gctrl = <0x46>;
+                vrhs = <0x0f>;
+                vdvs = <0x20>;
+                mdac = <0x00>;
+                gamma = <0x01>;
+                colmod = <0x55>;
+                lcm = <0x2c>;
+                porch-param = [0c 0c 00 33 33];
+                cmd2en-param = [5a 69 02 01];
+                pwctrl1-param = [a4 a1];
+                pvgam-param = [f0 00 06 04 05 05 31 44 48 36 12 12 2b 34];
+                nvgam-param = [f0 0b 0f 0f 0d 26 31 43 47 38 14 14 2c 32];
+                ram-param = [00 F0];
+                rgb-param = [40 02 14];
+                mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
+        };
+    };
+
+    aliases {
+        led0 = &blue_led_1;
+        led1 = &blue_led_2;
+        led2 = &blue_led_3;
+        button0 = &user_button_1;
+        button1 = &user_button_2;
+        button2 = &user_button_3;
+        pwmled0 = &blue_pwm_led_1;
+        pwmled1 = &blue_pwm_led_2;
+        pwmled2 = &blue_pwm_led_3;
+        eeprom1 = &eeprom1;
+        eeprom2 = &eeprom2;
+        lcd-led = &lcd_led;
+        die-temp0 = &die_temp;
+        volt-sensor0 = &vref;
+        volt-sensor1 = &vbat;
+    };
+};
+
+&usart1 {
+    pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+    pinctrl-names = "default";
+    current-speed = <115200>;
+    status = "okay";
+};
+
+&clk_lsi {
+    status = "okay";
+};
+
+// &clk_lse {
+// 	status = "okay";
+// };
+
+&clk_hse {
+    clock-frequency = <DT_FREQ_M(8)>;
+    status = "okay";
+};
+
+&pll {
+    div-m = <4>;
+    mul-n = <168>;
+    div-p = <2>;
+    div-q = <7>;
+    clocks = <&clk_hse>;
+    status = "okay";
+};
+
+&rcc {
+    clocks = <&pll>;
+    clock-frequency = <DT_FREQ_M(168)>;
+    ahb-prescaler = <1>;
+    apb1-prescaler = <4>;
+    apb2-prescaler = <2>;
+};
+
+&timers1 {
+    status = "okay";
+    st,prescaler = <167>;
+
+    pwm1: pwm {
+        status = "okay";
+        pinctrl-0 = <&tim1_ch1_pe9>;
+        pinctrl-names = "default";
+    };
+};
+
+&timers3 {
+    status = "okay";
+    st,prescaler = <83>;
+
+    pwm3: pwm {
+        status = "okay";
+        pinctrl-0 = <&tim3_ch3_pb0 &tim3_ch4_pb1>;
+        pinctrl-names = "default";
+    };
+};
+
+&i2c1 {
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_FAST>;
+    pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+    pinctrl-names = "default";
+
+    eeprom1: at24c512@50 {
+        status = "okay";
+        compatible = "atmel,at24";
+        reg = <0x50>;
+        size = <DT_SIZE_K(64)>;
+        pagesize = <128>;
+        address-width = <16>;
+        timeout = <5>;
+    };
+    eeprom2: at24c512@51 {
+        status = "okay";
+        compatible = "atmel,at24";
+        reg = <0x51>;
+        size = <DT_SIZE_K(64)>;
+        pagesize = <128>;
+        address-width = <16>;
+        timeout = <5>;
+    };
+};
+
+&i2c2 {
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_STANDARD>;
+    pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+    pinctrl-names = "default";
+
+    lis3dh: lis3dh@19 {
+        status = "okay";
+        compatible = "st,lis3dh", "st,lis2dh";
+        reg = <0x19>;
+        anym-on-int1;
+        irq-gpios = <&gpiod 0 GPIO_ACTIVE_HIGH>,
+                    <&gpiod 1 GPIO_ACTIVE_HIGH>;
+    };
+    bmp280: bme280@76 {
+        status = "okay";
+        compatible = "bosch,bme280";
+        reg = <0x76>;
+    };
+    ft6336: ft6336@38 {
+        status = "okay";
+        compatible = "focaltech,ft5336";
+        reg = <0x38>;
+        int-gpios = <&gpioe 12 GPIO_ACTIVE_LOW>;
+        reset-gpios = <&gpioe 15 GPIO_ACTIVE_LOW>;
+    };
+};
+
+&i2c3 {
+    status = "okay";
+    clock-frequency = <I2C_BITRATE_FAST>;
+    pinctrl-0 = <&i2c3_scl_pa8 &i2c3_sda_pc9>;
+    pinctrl-names = "default";
+
+    oled: ssd1306@3c {
+        status = "disabled";
+        compatible = "solomon,ssd1306fb";
+        reg = <0x3c>;
+        width = <128>;
+        height = <32>;
+        segment-offset = <0>;
+        page-offset = <0>;
+        display-offset = <0>;
+        multiplex-ratio = <31>;
+        segment-remap;
+        com-invdir;
+        com-sequential;
+        prechargep = <0x22>;
+        inversion-on;
+    };
+};
+
+&spi1 {
+    status = "okay";
+    clock-frequency = <DT_FREQ_M(42)>;
+    pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pa7>;
+    pinctrl-names = "default";
+
+    dmas = <&dma2 3 3 (STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC) STM32_DMA_FIFO_FULL>,
+           <&dma2 0 3 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC) STM32_DMA_FIFO_FULL>;
+    dma-names = "tx", "rx";
+
+    cs-gpios = <&gpioe 13 GPIO_ACTIVE_LOW>,
+               <&gpioe 14 GPIO_ACTIVE_LOW>;
+
+    flash1: w25q128jv@0 {
+        status = "okay";
+        compatible = "jedec,spi-nor";
+        reg = <0>;
+        size = <DT_SIZE_M(16)>;
+        spi-max-frequency = <DT_FREQ_M(25)>;
+        jedec-id = [ef 40 18];
+        has-dpd;
+        t-enter-dpd = <3000>;
+        t-exit-dpd = <3000>;
+    };
+    flash2: w25q128jv@1 {
+        status = "okay";
+        compatible = "jedec,spi-nor";
+        reg = <1>;
+        size = <DT_SIZE_M(16)>;
+        spi-max-frequency = <DT_FREQ_M(25)>;
+        jedec-id = [ef 40 18];
+        has-dpd;
+        t-enter-dpd = <3000>;
+        t-exit-dpd = <3000>;
+    };
+};
+
+&spi2 {
+    status = "okay";
+    clock-frequency = <DT_FREQ_M(42)>;
+    pinctrl-0 = <&spi2_sck_pb13 &spi2_miso_pc2 &spi2_mosi_pc3>;
+    pinctrl-names = "default";
+
+    dmas = <&dma1 4 0 (STM32_DMA_MEMORY_TO_PERIPH | STM32_DMA_MEM_INC) STM32_DMA_FIFO_FULL>,
+           <&dma1 3 0 (STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC) STM32_DMA_FIFO_FULL>;
+    dma-names = "tx", "rx";
+
+    cs-gpios = <&gpioe 2 GPIO_ACTIVE_LOW>;
+};
+
+&dma1 {
+    status = "okay";
+};
+
+&dma2 {
+    status = "okay";
+};
+
+&rtc {
+    status = "okay";
+    clocks = <&rcc STM32_CLOCK_BUS_APB1 0x10000000>,
+            <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+
+    backup_regs {
+        status = "okay";
+    };
+};
+
+&die_temp {
+    status = "okay";
+};
+
+&vref {
+    status = "okay";
+};
+
+&vbat {
+    status = "okay";
+};

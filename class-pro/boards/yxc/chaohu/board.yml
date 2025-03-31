@@ -1,0 +1,6 @@
+board:
+  name: chaohu
+  full_name: Class Boards
+  vendor: yxc
+  socs:
+    - name: stm32f407xx
